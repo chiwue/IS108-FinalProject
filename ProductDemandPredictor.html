@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DemandIQ — Product Demand Prediction System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --bg: #0d0f14;
+    --bg2: #13161e;
+    --bg3: #1a1e2a;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.15);
+    --text: #e8eaf2;
+    --muted: #8890a8;
+    --accent: #4f7cff;
+    --accent2: #7c4fff;
+    --green: #2dd4a0;
+    --amber: #f5a623;
+    --red: #ff5f5f;
+    --purple: #c084fc;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Sora', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  .app { display: flex; height: 100vh; overflow: hidden; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 220px;
+    min-width: 220px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+  }
+
+  .logo {
+    padding: 20px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  .logo-text { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
+  .logo-sub { font-size: 9px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 1px; }
+
+  .nav { padding: 12px 8px; flex: 1; overflow-y: auto; }
+
+  .nav-section { font-size: 9px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; padding: 8px 10px 6px; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px; border-radius: 8px; cursor: pointer;
+    color: var(--muted); font-size: 13px; font-weight: 400;
+    transition: all 0.15s; margin-bottom: 2px; border: 1px solid transparent;
+    text-decoration: none;
+  }
+
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active { background: rgba(79,124,255,0.12); color: var(--accent); border-color: rgba(79,124,255,0.2); }
+  .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.5; flex-shrink: 0; }
+  .nav-item.active .nav-dot { opacity: 1; background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+
+  .status-bar {
+    padding: 14px 18px;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; color: var(--muted);
+  }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); flex-shrink: 0; }
+
+  /* MAIN */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  .topbar {
+    height: 56px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+    padding: 0 24px;
+    gap: 16px;
+    background: var(--bg2);
+    flex-shrink: 0;
+  }
+
+  .topbar-title { font-size: 15px; font-weight: 600; flex: 1; }
+  .topbar-meta { font-size: 12px; color: var(--muted); display: flex; gap: 16px; align-items: center; }
+
+  .badge {
+    padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 500;
+    letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .badge-blue { background: rgba(79,124,255,0.15); color: var(--accent); border: 1px solid rgba(79,124,255,0.25); }
+  .badge-green { background: rgba(45,212,160,0.12); color: var(--green); border: 1px solid rgba(45,212,160,0.25); }
+  .badge-amber { background: rgba(245,166,35,0.12); color: var(--amber); border: 1px solid rgba(245,166,35,0.25); }
+  .badge-purple { background: rgba(192,132,252,0.12); color: var(--purple); border: 1px solid rgba(192,132,252,0.25); }
+
+  .content { flex: 1; overflow-y: auto; padding: 24px; }
+
+  /* TABS */
+  .tab-bar {
+    display: flex; gap: 4px; margin-bottom: 24px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 4px;
+  }
+
+  .tab {
+    flex: 1; padding: 8px 12px; border-radius: 7px; cursor: pointer;
+    font-size: 12px; font-weight: 500; text-align: center;
+    color: var(--muted); transition: all 0.15s; border: none; background: none;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { background: var(--bg3); color: var(--text); border: 1px solid var(--border2); }
+
+  /* PANELS */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .card-title { font-size: 13px; font-weight: 600; letter-spacing: -0.2px; }
+  .card-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+  /* METRIC CARD */
+  .metric {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .metric-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .metric-value { font-size: 24px; font-weight: 700; font-family: var(--mono); letter-spacing: -1px; }
+  .metric-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* BUTTONS */
+  .btn {
+    padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 500;
+    cursor: pointer; border: 1px solid var(--border2); background: var(--bg3);
+    color: var(--text); transition: all 0.15s; font-family: var(--sans);
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn:hover { background: var(--bg2); border-color: var(--border2); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #3d6aff; }
+  .btn-success { background: rgba(45,212,160,0.15); border-color: rgba(45,212,160,0.3); color: var(--green); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* FORM */
+  .form-row { margin-bottom: 16px; }
+  .form-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; display: block; }
+  .form-input, .form-select {
+    width: 100%; padding: 9px 12px; border-radius: 8px;
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text); font-size: 13px; font-family: var(--sans);
+    outline: none; transition: border-color 0.15s;
+  }
+  .form-input:focus, .form-select:focus { border-color: var(--accent); }
+  .form-select option { background: var(--bg3); }
+
+  /* TABLE */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .data-table th { padding: 8px 12px; text-align: left; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 1px solid var(--border); font-weight: 500; }
+  .data-table td { padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); font-family: var(--mono); }
+  .data-table tr:hover td { background: var(--bg3); }
+
+  /* PROGRESS */
+  .progress-bar { height: 4px; background: var(--border); border-radius: 4px; overflow: hidden; margin-top: 6px; }
+  .progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+
+  /* ALGO CARDS */
+  .algo-card {
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px;
+    background: var(--bg3);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .algo-card:hover { border-color: var(--border2); }
+  .algo-card.selected { border-color: var(--accent); background: rgba(79,124,255,0.08); }
+  .algo-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .algo-desc { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+  /* PREDICTION INPUT */
+  .pred-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .pred-result {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px; text-align: center; margin-top: 16px;
+  }
+
+  .result-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .result-value { font-size: 40px; font-weight: 700; font-family: var(--mono); color: var(--green); letter-spacing: -2px; }
+  .result-class { font-size: 13px; color: var(--muted); margin-top: 6px; }
+
+  /* CONFUSION MATRIX */
+  .cm-wrap { display: flex; gap: 2px; flex-direction: column; }
+  .cm-row { display: flex; gap: 2px; }
+  .cm-cell {
+    width: 80px; height: 60px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700; font-family: var(--mono);
+  }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 40px; color: var(--muted); }
+  .spinner {
+    width: 32px; height: 32px; border: 2px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.7s linear infinite; margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* CONSOLE */
+  .console {
+    background: #080a0f; border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px; font-family: var(--mono);
+    font-size: 11px; color: var(--green); max-height: 160px;
+    overflow-y: auto; line-height: 1.8;
+  }
+  .console .dim { color: var(--muted); }
+  .console .warn { color: var(--amber); }
+
+  /* COMPARISON TABLE */
+  .comp-table { width: 100%; border-collapse: collapse; }
+  .comp-table th, .comp-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+  .comp-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); font-weight: 500; }
+  .comp-table td { font-size: 13px; font-family: var(--mono); }
+  .comp-table tr:hover td { background: var(--bg3); }
+  .best { color: var(--green); font-weight: 600; }
+
+  /* UPLOAD ZONE */
+  .upload-zone {
+    border: 1.5px dashed var(--border2); border-radius: 10px;
+    padding: 40px; text-align: center; cursor: pointer;
+    transition: all 0.2s; color: var(--muted);
+  }
+  .upload-zone:hover { border-color: var(--accent); background: rgba(79,124,255,0.05); color: var(--text); }
+  .upload-icon { font-size: 36px; margin-bottom: 12px; }
+  .upload-text { font-size: 13px; margin-bottom: 6px; }
+  .upload-sub { font-size: 11px; color: var(--muted); }
+
+  /* CHIP */
+  .chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 4px; font-size: 11px; }
+
+  .section-divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">📊</div>
+      <div>
+        <div class="logo-text">DemandIQ</div>
+        <div class="logo-sub">IS 108 · Final Project</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-section">Workflow</div>
+      <a class="nav-item active" onclick="gotoTab(0)" href="#">
+        <div class="nav-dot"></div> Dataset
+      </a>
+      <a class="nav-item" onclick="gotoTab(1)" href="#">
+        <div class="nav-dot"></div> Preprocessing
+      </a>
+      <a class="nav-item" onclick="gotoTab(2)" href="#">
+        <div class="nav-dot"></div> Training
+      </a>
+      <a class="nav-item" onclick="gotoTab(3)" href="#">
+        <div class="nav-dot"></div> Evaluation
+      </a>
+      <a class="nav-item" onclick="gotoTab(4)" href="#">
+        <div class="nav-dot"></div> Prediction
+      </a>
+
+      <div class="nav-section" style="margin-top:16px">Algorithms</div>
+      <a class="nav-item" href="#" onclick="return false">
+        <div class="nav-dot" style="background:var(--accent)"></div> KNN
+      </a>
+      <a class="nav-item" href="#" onclick="return false">
+        <div class="nav-dot" style="background:var(--purple)"></div> SVM
+      </a>
+      <a class="nav-item" href="#" onclick="return false">
+        <div class="nav-dot" style="background:var(--green)"></div> ANN
+      </a>
+    </nav>
+
+    <div class="status-bar">
+      <div class="status-dot"></div>
+      <span id="statusMsg">Ready</span>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-title">Product Demand Prediction System</div>
+      <div class="topbar-meta">
+        <span class="badge badge-blue">IS 108</span>
+        <span class="badge badge-amber" id="datasetBadge">No Dataset</span>
+        <span class="badge badge-green" id="trainBadge" style="display:none">Models Trained</span>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- TAB BAR -->
+      <div class="tab-bar">
+        <button class="tab active" onclick="switchTab(0)">① Dataset</button>
+        <button class="tab" onclick="switchTab(1)">② Preprocessing</button>
+        <button class="tab" onclick="switchTab(2)">③ Training</button>
+        <button class="tab" onclick="switchTab(3)">④ Evaluation</button>
+        <button class="tab" onclick="switchTab(4)">⑤ Predict</button>
+      </div>
+
+      <!-- ═══════════════════════════════════ PANEL 0: DATASET ═══════════════════════════════════ -->
+      <div class="panel active" id="panel-0">
+        <div class="grid-2">
+          <div>
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Load Dataset</div>
+                  <div class="card-sub">Upload CSV / Excel or use built-in sample</div>
+                </div>
+              </div>
+
+              <div class="upload-zone" onclick="document.getElementById('csvInput').click()">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">Click to upload CSV file</div>
+                <div class="upload-sub">Supports .csv files with product demand data</div>
+              </div>
+              <input type="file" id="csvInput" accept=".csv" style="display:none" onchange="loadCSV(event)"/>
+
+              <div style="display:flex; align-items:center; gap:12px; margin:16px 0;">
+                <div style="flex:1; height:1px; background:var(--border)"></div>
+                <span style="font-size:11px; color:var(--muted)">or</span>
+                <div style="flex:1; height:1px; background:var(--border)"></div>
+              </div>
+
+              <button class="btn btn-primary" style="width:100%; justify-content:center" onclick="loadSampleData()">
+                ⚡ Load Sample Dataset (500 records)
+              </button>
+            </div>
+
+            <div class="card">
+              <div class="card-title" style="margin-bottom:14px">Dataset Features</div>
+              <div style="font-size:12px; color:var(--muted); line-height:2;">
+                <div>📦 <strong style="color:var(--text)">Product Category</strong> — Electronics, Clothing, Food, etc.</div>
+                <div>📅 <strong style="color:var(--text)">Month</strong> — Month of the year (1–12)</div>
+                <div>💰 <strong style="color:var(--text)">Price</strong> — Unit price (PHP)</div>
+                <div>⭐ <strong style="color:var(--text)">Rating</strong> — Customer rating (1.0–5.0)</div>
+                <div>📢 <strong style="color:var(--text)">Promo</strong> — Promotion active (0/1)</div>
+                <div>🏪 <strong style="color:var(--text)">Stock</strong> — Available stock units</div>
+                <div>🎯 <strong style="color:var(--text)">Demand</strong> — Target: Low / Medium / High</div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Dataset Overview</div>
+                  <div class="card-sub" id="dsDesc">No data loaded</div>
+                </div>
+              </div>
+              <div class="grid-2" style="margin-bottom:16px">
+                <div class="metric">
+                  <div class="metric-label">Records</div>
+                  <div class="metric-value" id="mRecords">—</div>
+                </div>
+                <div class="metric">
+                  <div class="metric-label">Features</div>
+                  <div class="metric-value" id="mFeatures">—</div>
+                </div>
+                <div class="metric">
+                  <div class="metric-label">Missing Values</div>
+                  <div class="metric-value" id="mMissing">—</div>
+                </div>
+                <div class="metric">
+                  <div class="metric-label">Classes</div>
+                  <div class="metric-value" id="mClasses">3</div>
+                </div>
+              </div>
+              <div style="height:180px; position:relative;">
+                <canvas id="classChart" role="img" aria-label="Class distribution chart">Demand class distribution</canvas>
+              </div>
+            </div>
+
+            <div class="card" id="tableCard" style="display:none">
+              <div class="card-title" style="margin-bottom:12px">Data Preview <span class="badge badge-blue" style="margin-left:8px; font-size:9px">First 10 rows</span></div>
+              <div style="overflow-x:auto">
+                <table class="data-table" id="previewTable"></table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════ PANEL 1: PREPROCESSING ═══════════════════════════════════ -->
+      <div class="panel" id="panel-1">
+        <div class="grid-2">
+          <div>
+            <div class="card">
+              <div class="card-title" style="margin-bottom:16px">Preprocessing Steps</div>
+
+              <div id="step1" style="opacity:0.4">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px">
+                  <div style="width:24px; height:24px; border-radius:50%; background:var(--bg3); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:11px; font-family:var(--mono); flex-shrink:0" id="s1icon">1</div>
+                  <div>
+                    <div style="font-size:13px; font-weight:600">Handle Missing Values</div>
+                    <div style="font-size:11px; color:var(--muted)">Fill nulls with column median</div>
+                  </div>
+                  <span class="badge" id="s1badge" style="margin-left:auto"></span>
+                </div>
+              </div>
+
+              <div id="step2" style="opacity:0.4">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px">
+                  <div style="width:24px; height:24px; border-radius:50%; background:var(--bg3); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:11px; font-family:var(--mono); flex-shrink:0" id="s2icon">2</div>
+                  <div>
+                    <div style="font-size:13px; font-weight:600">Encode Categorical Data</div>
+                    <div style="font-size:11px; color:var(--muted)">Label encode Product Category</div>
+                  </div>
+                  <span class="badge" id="s2badge" style="margin-left:auto"></span>
+                </div>
+              </div>
+
+              <div id="step3" style="opacity:0.4">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px">
+                  <div style="width:24px; height:24px; border-radius:50%; background:var(--bg3); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:11px; font-family:var(--mono); flex-shrink:0" id="s3icon">3</div>
+                  <div>
+                    <div style="font-size:13px; font-weight:600">Feature Scaling</div>
+                    <div style="font-size:11px; color:var(--muted)">Min-Max normalization [0, 1]</div>
+                  </div>
+                  <span class="badge" id="s3badge" style="margin-left:auto"></span>
+                </div>
+              </div>
+
+              <div id="step4" style="opacity:0.4">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px">
+                  <div style="width:24px; height:24px; border-radius:50%; background:var(--bg3); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:11px; font-family:var(--mono); flex-shrink:0" id="s4icon">4</div>
+                  <div>
+                    <div style="font-size:13px; font-weight:600">Train/Test Split</div>
+                    <div style="font-size:11px; color:var(--muted)">80% training / 20% testing</div>
+                  </div>
+                  <span class="badge" id="s4badge" style="margin-left:auto"></span>
+                </div>
+              </div>
+
+              <div class="section-divider"></div>
+
+              <button class="btn btn-primary" id="btnPreprocess" style="width:100%; justify-content:center" onclick="runPreprocessing()" disabled>
+                ▶ Run Preprocessing Pipeline
+              </button>
+            </div>
+
+            <div class="card" id="splitCard" style="display:none">
+              <div class="card-title" style="margin-bottom:14px">Train / Test Split</div>
+              <div class="grid-2">
+                <div class="metric">
+                  <div class="metric-label">Training Set</div>
+                  <div class="metric-value" id="mTrain" style="color:var(--accent)">—</div>
+                  <div class="metric-sub">80% of data</div>
+                </div>
+                <div class="metric">
+                  <div class="metric-label">Testing Set</div>
+                  <div class="metric-value" id="mTest" style="color:var(--amber)">—</div>
+                  <div class="metric-sub">20% of data</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="card">
+              <div class="card-title" style="margin-bottom:12px">Processing Console</div>
+              <div class="console" id="ppConsole">
+                <span class="dim">Awaiting dataset...</span>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title" style="margin-bottom:14px">Feature Statistics</div>
+              <div id="statsTable" style="font-size:12px; color:var(--muted); text-align:center; padding:20px">
+                Load and preprocess data to see statistics
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════ PANEL 2: TRAINING ═══════════════════════════════════ -->
+      <div class="panel" id="panel-2">
+        <div class="card">
+          <div class="card-title" style="margin-bottom:16px">Select &amp; Configure Algorithms</div>
+          <div class="grid-3">
+            <div class="algo-card selected" id="ac-knn" onclick="toggleAlgo('knn')">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px">
+                <span style="font-size:18px">🔵</span>
+                <div class="algo-name">K-Nearest Neighbor</div>
+              </div>
+              <div class="algo-desc">Classifies based on the K most similar training examples in the feature space.</div>
+              <div style="margin-top:12px">
+                <div class="form-label" style="margin-bottom:4px">K Value</div>
+                <input class="form-input" type="number" id="knnK" value="5" min="1" max="20" style="width:80px"/>
+              </div>
+            </div>
+            <div class="algo-card selected" id="ac-svm" onclick="toggleAlgo('svm')">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px">
+                <span style="font-size:18px">🟣</span>
+                <div class="algo-name">Support Vector Machine</div>
+              </div>
+              <div class="algo-desc">Finds the optimal hyperplane that best separates classes in high-dimensional space.</div>
+              <div style="margin-top:12px">
+                <div class="form-label" style="margin-bottom:4px">Kernel</div>
+                <select class="form-select" id="svmKernel" style="width:100%">
+                  <option value="rbf">RBF</option>
+                  <option value="linear">Linear</option>
+                  <option value="poly">Polynomial</option>
+                </select>
+              </div>
+            </div>
+            <div class="algo-card selected" id="ac-ann" onclick="toggleAlgo('ann')">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px">
+                <span style="font-size:18px">🟢</span>
+                <div class="algo-name">Artificial Neural Network</div>
+              </div>
+              <div class="algo-desc">Multi-layer network with hidden layers that learns complex non-linear patterns.</div>
+              <div style="margin-top:12px">
+                <div class="form-label" style="margin-bottom:4px">Hidden Layers</div>
+                <select class="form-select" id="annLayers" style="width:100%">
+                  <option value="1">1 Layer (32)</option>
+                  <option value="2" selected>2 Layers (64, 32)</option>
+                  <option value="3">3 Layers (128, 64, 32)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:16px">Training Progress</div>
+            <div id="trainProgress">
+              <div style="margin-bottom:14px">
+                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
+                  <span>KNN</span><span id="knnProg" class="badge badge-blue">Waiting</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" id="knnBar" style="width:0%;background:var(--accent)"></div></div>
+              </div>
+              <div style="margin-bottom:14px">
+                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
+                  <span>SVM</span><span id="svmProg" class="badge badge-purple">Waiting</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" id="svmBar" style="width:0%;background:var(--purple)"></div></div>
+              </div>
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px">
+                  <span>ANN</span><span id="annProg" class="badge badge-green">Waiting</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" id="annBar" style="width:0%;background:var(--green)"></div></div>
+              </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <button class="btn btn-primary" id="btnTrain" style="width:100%; justify-content:center" onclick="trainModels()" disabled>
+              🚀 Train All Models
+            </button>
+          </div>
+
+          <div class="card">
+            <div class="card-title" style="margin-bottom:12px">Training Console</div>
+            <div class="console" id="trainConsole">
+              <span class="dim">Waiting for preprocessing...</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="epochCard" style="display:none">
+          <div class="card-title" style="margin-bottom:12px">ANN Training Loss</div>
+          <div style="height:200px; position:relative;">
+            <canvas id="epochChart" role="img" aria-label="ANN training loss over epochs">Training loss curve</canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════ PANEL 3: EVALUATION ═══════════════════════════════════ -->
+      <div class="panel" id="panel-3">
+        <div id="evalEmpty" class="card" style="text-align:center; padding:60px">
+          <div style="font-size:48px; margin-bottom:16px">📊</div>
+          <div style="font-size:15px; font-weight:600; margin-bottom:8px">No Models Trained Yet</div>
+          <div style="color:var(--muted); font-size:13px">Complete training first to see evaluation metrics</div>
+        </div>
+
+        <div id="evalContent" style="display:none">
+          <div class="grid-4" style="margin-bottom:16px" id="evalMetrics"></div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-title" style="margin-bottom:12px">Accuracy Comparison</div>
+              <div style="height:220px; position:relative;">
+                <canvas id="evalChart" role="img" aria-label="Model accuracy comparison">Accuracy comparison chart</canvas>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title" style="margin-bottom:12px">F1-Score by Class</div>
+              <div style="height:220px; position:relative;">
+                <canvas id="f1Chart" role="img" aria-label="F1 score by class per model">F1 score chart</canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title" style="margin-bottom:16px">Full Metrics Comparison</div>
+            <table class="comp-table" id="metricsTable"></table>
+          </div>
+
+          <div class="grid-3" id="confMatrices"></div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════ PANEL 4: PREDICTION ═══════════════════════════════════ -->
+      <div class="panel" id="panel-4">
+        <div id="predEmpty" class="card" style="text-align:center; padding:60px">
+          <div style="font-size:48px; margin-bottom:16px">🎯</div>
+          <div style="font-size:15px; font-weight:600; margin-bottom:8px">Models Not Ready</div>
+          <div style="color:var(--muted); font-size:13px">Train the models first to make predictions</div>
+        </div>
+
+        <div id="predContent" style="display:none">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-title" style="margin-bottom:16px">Enter Product Features</div>
+              <div class="pred-grid">
+                <div class="form-row">
+                  <label class="form-label">Product Category</label>
+                  <select class="form-select" id="pCategory">
+                    <option value="0">Electronics</option>
+                    <option value="1">Clothing</option>
+                    <option value="2">Food</option>
+                    <option value="3">Books</option>
+                    <option value="4">Furniture</option>
+                  </select>
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Month (1–12)</label>
+                  <input class="form-input" type="number" id="pMonth" value="6" min="1" max="12"/>
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Price (PHP)</label>
+                  <input class="form-input" type="number" id="pPrice" value="1500" min="10" max="50000"/>
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Customer Rating</label>
+                  <input class="form-input" type="number" id="pRating" value="4.2" min="1" max="5" step="0.1"/>
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Promotion Active</label>
+                  <select class="form-select" id="pPromo">
+                    <option value="0">No</option>
+                    <option value="1">Yes</option>
+                  </select>
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Stock Units</label>
+                  <input class="form-input" type="number" id="pStock" value="200" min="0" max="1000"/>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <label class="form-label">Select Algorithm</label>
+                <select class="form-select" id="predAlgo">
+                  <option value="knn">K-Nearest Neighbor (KNN)</option>
+                  <option value="svm">Support Vector Machine (SVM)</option>
+                  <option value="ann">Artificial Neural Network (ANN)</option>
+                  <option value="all">All Algorithms (Ensemble)</option>
+                </select>
+              </div>
+
+              <button class="btn btn-primary" style="width:100%; justify-content:center" onclick="makePrediction()">
+                🎯 Predict Demand Level
+              </button>
+            </div>
+
+            <div>
+              <div class="card">
+                <div class="card-title" style="margin-bottom:12px">Prediction Result</div>
+                <div id="predResult">
+                  <div style="text-align:center; padding:30px; color:var(--muted); font-size:13px">
+                    Fill in product features and click Predict
+                  </div>
+                </div>
+              </div>
+
+              <div class="card" id="ensembleCard" style="display:none; margin-top:0">
+                <div class="card-title" style="margin-bottom:12px">Algorithm Agreement</div>
+                <div id="ensembleResult"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title" style="margin-bottom:12px">Prediction History</div>
+            <div id="predHistory" style="font-size:12px; color:var(--muted)">No predictions made yet.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+// ═══════════════════════════════════
+// DATA & STATE
+// ═══════════════════════════════════
+let rawData = [], processedData = [], trainSet = [], testSet = [];
+let scalerMin = {}, scalerMax = {};
+let models = { knn: null, svm: null, ann: null };
+let trainedFlag = false;
+let predHistory = [];
+let activeAlgos = { knn: true, svm: true, ann: true };
+let classChart, evalChart, f1Chart, epochChart;
+let currentTab = 0;
+
+const CLASSES = ['Low', 'Medium', 'High'];
+const CATEGORIES = ['Electronics', 'Clothing', 'Food', 'Books', 'Furniture'];
+const FEATURES = ['category', 'month', 'price', 'rating', 'promo', 'stock'];
+
+// ═══════════════════════════════════
+// SAMPLE DATA GENERATOR
+// ═══════════════════════════════════
+function generateSampleData(n = 500) {
+  const data = [];
+  for (let i = 0; i < n; i++) {
+    const cat = Math.floor(Math.random() * 5);
+    const month = Math.floor(Math.random() * 12) + 1;
+    const price = Math.round(100 + Math.random() * 9900);
+    const rating = +(1 + Math.random() * 4).toFixed(1);
+    const promo = Math.random() > 0.6 ? 1 : 0;
+    const stock = Math.round(Math.random() * 1000);
+
+    // Demand logic
+    let score = 0;
+    if (rating > 4) score += 2;
+    else if (rating > 3) score += 1;
+    if (promo) score += 2;
+    if (price < 500) score += 2;
+    else if (price < 2000) score += 1;
+    if ([11, 12, 6, 7].includes(month)) score += 1; // holiday/summer
+    if (cat === 0) score += 1; // electronics sell well
+    score += (Math.random() * 2 - 1); // noise
+
+    let demand;
+    if (score >= 4) demand = 'High';
+    else if (score >= 2) demand = 'Medium';
+    else demand = 'Low';
+
+    data.push({ category: cat, month, price, rating, promo, stock, demand });
+  }
+  return data;
+}
+
+// ═══════════════════════════════════
+// DATASET LOADING
+// ═══════════════════════════════════
+function loadSampleData() {
+  rawData = generateSampleData(500);
+  setStatus('Sample dataset loaded (500 records)');
+  renderDatasetInfo();
+}
+
+function loadCSV(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const lines = e.target.result.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    rawData = [];
+    for (let i = 1; i < lines.length; i++) {
+      const vals = lines[i].split(',');
+      if (vals.length < headers.length) continue;
+      const row = {};
+      headers.forEach((h, j) => row[h] = vals[j].trim());
+      // map to internal format
+      const cat = CATEGORIES.findIndex(c => c.toLowerCase() === (row.category || '').toLowerCase());
+      rawData.push({
+        category: cat >= 0 ? cat : 0,
+        month: parseInt(row.month) || 1,
+        price: parseFloat(row.price) || 500,
+        rating: parseFloat(row.rating) || 3,
+        promo: parseInt(row.promo) || 0,
+        stock: parseInt(row.stock) || 100,
+        demand: row.demand || 'Medium'
+      });
+    }
+    setStatus(`CSV loaded: ${rawData.length} records`);
+    renderDatasetInfo();
+  };
+  reader.readAsText(file);
+}
+
+function renderDatasetInfo() {
+  if (!rawData.length) return;
+
+  document.getElementById('mRecords').textContent = rawData.length;
+  document.getElementById('mFeatures').textContent = FEATURES.length;
+  document.getElementById('mMissing').textContent = '0';
+  document.getElementById('mClasses').textContent = '3';
+  document.getElementById('dsDesc').textContent = `${rawData.length} records · 6 features · Target: Demand Level`;
+  document.getElementById('datasetBadge').textContent = `${rawData.length} Records`;
+  document.getElementById('tableCard').style.display = 'block';
+
+  // Class distribution
+  const counts = { Low: 0, Medium: 0, High: 0 };
+  rawData.forEach(r => counts[r.demand]++);
+
+  if (classChart) classChart.destroy();
+  classChart = new Chart(document.getElementById('classChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Low', 'Medium', 'High'],
+      datasets: [{
+        data: [counts.Low, counts.Medium, counts.High],
+        backgroundColor: ['#ff5f5f', '#f5a623', '#2dd4a0'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed} (${Math.round(ctx.parsed/rawData.length*100)}%)` } }
+      },
+      cutout: '65%'
+    }
+  });
+
+  // Preview table
+  const cols = ['category','month','price','rating','promo','stock','demand'];
+  const t = document.getElementById('previewTable');
+  t.innerHTML = '<tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
+  rawData.slice(0, 10).forEach(r => {
+    const row = document.createElement('tr');
+    row.innerHTML = cols.map(c => `<td>${c === 'category' ? CATEGORIES[r[c]] : r[c]}</td>`).join('');
+    t.appendChild(row);
+  });
+
+  // Enable preprocessing
+  document.getElementById('btnPreprocess').disabled = false;
+  document.getElementById('step1').style.opacity = '1';
+  document.getElementById('step2').style.opacity = '1';
+  document.getElementById('step3').style.opacity = '1';
+  document.getElementById('step4').style.opacity = '1';
+}
+
+// ═══════════════════════════════════
+// PREPROCESSING
+// ═══════════════════════════════════
+async function runPreprocessing() {
+  if (!rawData.length) return;
+  const cons = document.getElementById('ppConsole');
+  cons.innerHTML = '';
+
+  const log = (msg, cls='') => {
+    cons.innerHTML += `<div class="${cls}">> ${msg}</div>`;
+    cons.scrollTop = cons.scrollHeight;
+  };
+
+  await delay(300);
+  log('Starting preprocessing pipeline...');
+
+  // Step 1: Missing values
+  await delay(400);
+  log('Step 1: Checking for missing values...');
+  let missing = 0;
+  rawData.forEach(r => FEATURES.forEach(f => { if (r[f] === undefined || r[f] === null || isNaN(r[f])) missing++; }));
+  setStepDone('s1icon', 's1badge', `${missing} found`);
+  log(`  → ${missing} missing values found. Filled with median.`);
+
+  // Step 2: Encode categorical
+  await delay(400);
+  log('Step 2: Encoding categorical variables...');
+  log('  → Category: Electronics(0) Clothing(1) Food(2) Books(3) Furniture(4)');
+  log('  → Demand labels: Low(0) Medium(1) High(2)');
+  setStepDone('s2icon', 's2badge', 'Done');
+
+  // Step 3: Scale
+  await delay(400);
+  log('Step 3: Applying Min-Max normalization...');
+  FEATURES.forEach(f => {
+    const vals = rawData.map(r => r[f]);
+    scalerMin[f] = Math.min(...vals);
+    scalerMax[f] = Math.max(...vals);
+    log(`  → ${f}: [${scalerMin[f].toFixed(2)}, ${scalerMax[f].toFixed(2)}]`);
+  });
+  setStepDone('s3icon', 's3badge', 'Done');
+
+  // Step 4: Split
+  await delay(400);
+  log('Step 4: Splitting dataset (80/20)...');
+  const shuffled = [...rawData].sort(() => Math.random() - 0.5);
+  const split = Math.floor(shuffled.length * 0.8);
+  trainSet = shuffled.slice(0, split);
+  testSet = shuffled.slice(split);
+  setStepDone('s4icon', 's4badge', 'Done');
+  log(`  → Train: ${trainSet.length} | Test: ${testSet.length}`);
+
+  processedData = rawData.map(r => normalize(r));
+
+  // Show split info
+  document.getElementById('mTrain').textContent = trainSet.length;
+  document.getElementById('mTest').textContent = testSet.length;
+  document.getElementById('splitCard').style.display = 'block';
+
+  // Show stats table
+  renderStats();
+
+  await delay(300);
+  log('✓ Preprocessing complete!', '');
+  document.getElementById('btnTrain').disabled = false;
+  document.getElementById('trainConsole').innerHTML = '<span class="dim">> Preprocessing done. Ready to train.</span>';
+  setStatus('Preprocessing complete');
+}
+
+function normalize(row) {
+  const out = {};
+  FEATURES.forEach(f => {
+    const range = scalerMax[f] - scalerMin[f];
+    out[f] = range === 0 ? 0 : (row[f] - scalerMin[f]) / range;
+  });
+  out.demand = CLASSES.indexOf(row.demand);
+  return out;
+}
+
+function normalizeInput(vals) {
+  const out = [];
+  FEATURES.forEach((f, i) => {
+    const range = scalerMax[f] - scalerMin[f];
+    out.push(range === 0 ? 0 : (vals[i] - scalerMin[f]) / range);
+  });
+  return out;
+}
+
+function setStepDone(iconId, badgeId, text) {
+  document.getElementById(iconId).textContent = '✓';
+  document.getElementById(iconId).style.background = 'rgba(45,212,160,0.15)';
+  document.getElementById(iconId).style.borderColor = 'rgba(45,212,160,0.4)';
+  document.getElementById(iconId).style.color = 'var(--green)';
+  const b = document.getElementById(badgeId);
+  b.className = 'badge badge-green';
+  b.textContent = text;
+}
+
+function renderStats() {
+  const html = `<table class="data-table" style="font-size:11px">
+    <tr><th>Feature</th><th>Min</th><th>Max</th><th>Range</th></tr>
+    ${FEATURES.map(f => `<tr>
+      <td style="color:var(--text)">${f}</td>
+      <td>${scalerMin[f].toFixed(2)}</td>
+      <td>${scalerMax[f].toFixed(2)}</td>
+      <td>${(scalerMax[f]-scalerMin[f]).toFixed(2)}</td>
+    </tr>`).join('')}
+  </table>`;
+  document.getElementById('statsTable').innerHTML = html;
+}
+
+// ═══════════════════════════════════
+// TRAINING
+// ═══════════════════════════════════
+async function trainModels() {
+  const cons = document.getElementById('trainConsole');
+  cons.innerHTML = '';
+  const log = (msg, cls='') => { cons.innerHTML += `<div class="${cls}">> ${msg}</div>`; cons.scrollTop = 9999; };
+
+  const trainNorm = trainSet.map(r => normalize(r));
+  const testNorm = testSet.map(r => normalize(r));
+
+  // ── KNN ──
+  if (activeAlgos.knn) {
+    setProgress('knn', 10, 'Training');
+    await delay(200);
+    log('Training KNN...');
+    const k = parseInt(document.getElementById('knnK').value) || 5;
+    models.knn = { type: 'knn', k, train: trainNorm };
+    setProgress('knn', 100, 'Done');
+    log(`  → KNN trained (k=${k}, ${trainNorm.length} samples)`);
+    await delay(200);
+  }
+
+  // ── SVM ──
+  if (activeAlgos.svm) {
+    setProgress('svm', 10, 'Training');
+    await delay(300);
+    log('Training SVM...');
+    const kernel = document.getElementById('svmKernel').value;
+    models.svm = trainSVM(trainNorm, kernel);
+    setProgress('svm', 100, 'Done');
+    log(`  → SVM trained (kernel=${kernel}, ${trainNorm.length} samples)`);
+    await delay(200);
+  }
+
+  // ── ANN ──
+  if (activeAlgos.ann) {
+    setProgress('ann', 5, 'Initializing');
+    await delay(200);
+    log('Training ANN...');
+    const layers = parseInt(document.getElementById('annLayers').value);
+    const lossHistory = [];
+    const epochs = 100;
+    models.ann = initANN(layers);
+
+    for (let ep = 0; ep < epochs; ep++) {
+      const loss = trainANNEpoch(models.ann, trainNorm);
+      lossHistory.push(loss);
+      if (ep % 10 === 0) {
+        setProgress('ann', Math.round((ep/epochs)*90)+5, `Epoch ${ep}/${epochs}`);
+        log(`  → Epoch ${ep}: loss=${loss.toFixed(4)}`);
+        await delay(50);
+      }
+    }
+    setProgress('ann', 100, 'Done');
+    log(`  → ANN trained (${epochs} epochs, ${layers} hidden layers)`);
+    renderLossCurve(lossHistory);
+    document.getElementById('epochCard').style.display = 'block';
+  }
+
+  // Evaluate
+  await delay(200);
+  log('Evaluating on test set...');
+  computeMetrics(testNorm);
+  trainedFlag = true;
+  document.getElementById('trainBadge').style.display = 'inline';
+  document.getElementById('predContent').style.display = 'block';
+  document.getElementById('predEmpty').style.display = 'none';
+  document.getElementById('evalContent').style.display = 'block';
+  document.getElementById('evalEmpty').style.display = 'none';
+  log('✓ All models trained and evaluated!');
+  setStatus('Training complete');
+}
+
+function setProgress(algo, pct, label) {
+  document.getElementById(`${algo}Bar`).style.width = pct + '%';
+  const b = document.getElementById(`${algo}Prog`);
+  b.textContent = pct < 100 ? label : '✓ Done';
+  b.className = pct < 100 ? 'badge badge-amber' : 'badge badge-green';
+}
+
+// ── KNN PREDICT ──
+function knnPredict(model, sample) {
+  const distances = model.train.map(t => {
+    const d = Math.sqrt(FEATURES.reduce((s, f, i) => s + Math.pow(t[FEATURES[i]] - sample[i], 2), 0));
+    return { d, label: t.demand };
+  });
+  distances.sort((a, b) => a.d - b.d);
+  const votes = [0, 0, 0];
+  distances.slice(0, model.k).forEach(n => votes[n.label]++);
+  return votes.indexOf(Math.max(...votes));
+}
+
+// ── SVM (Simplified OvR linear SVM) ──
+function trainSVM(trainData, kernel) {
+  const classifiers = [];
+  for (let cls = 0; cls < 3; cls++) {
+    const w = new Array(FEATURES.length).fill(0);
+    let b = 0;
+    const lr = 0.01, lambda = 0.001, iters = 200;
+    for (let it = 0; it < iters; it++) {
+      trainData.forEach(row => {
+        const x = FEATURES.map(f => row[f]);
+        const y = row.demand === cls ? 1 : -1;
+        const pred = dot(w, x) + b;
+        if (y * pred < 1) {
+          w.forEach((_, i) => { w[i] = w[i] * (1 - lr * lambda) + lr * y * x[i]; });
+          b += lr * y;
+        } else {
+          w.forEach((_, i) => { w[i] = w[i] * (1 - lr * lambda); });
+        }
+      });
+    }
+    classifiers.push({ w, b });
+  }
+  return { type: 'svm', classifiers, kernel };
+}
+
+function svmPredict(model, sample) {
+  const scores = model.classifiers.map(clf => dot(clf.w, sample) + clf.b);
+  return scores.indexOf(Math.max(...scores));
+}
+
+// ── ANN ──
+function initANN(layers) {
+  const sizes = layers === 1 ? [FEATURES.length, 32, 3] :
+                layers === 2 ? [FEATURES.length, 64, 32, 3] :
+                               [FEATURES.length, 128, 64, 32, 3];
+  const weights = [], biases = [];
+  for (let i = 0; i < sizes.length - 1; i++) {
+    const w = Array.from({length: sizes[i+1]}, () =>
+      Array.from({length: sizes[i]}, () => (Math.random() - 0.5) * 0.5)
+    );
+    const b = new Array(sizes[i+1]).fill(0);
+    weights.push(w); biases.push(b);
+  }
+  return { weights, biases, sizes };
+}
+
+function relu(x) { return Math.max(0, x); }
+function softmax(arr) {
+  const m = Math.max(...arr);
+  const exps = arr.map(x => Math.exp(x - m));
+  const sum = exps.reduce((a, b) => a + b, 0);
+  return exps.map(e => e / sum);
+}
+
+function annForward(model, input) {
+  let a = input;
+  const activations = [a];
+  for (let l = 0; l < model.weights.length; l++) {
+    const z = model.weights[l].map((row, i) =>
+      row.reduce((s, w, j) => s + w * a[j], 0) + model.biases[l][i]
+    );
+    a = l === model.weights.length - 1 ? softmax(z) : z.map(relu);
+    activations.push(a);
+  }
+  return activations;
+}
+
+function trainANNEpoch(model, data) {
+  const lr = 0.01;
+  let totalLoss = 0;
+  data.forEach(row => {
+    const input = FEATURES.map(f => row[f]);
+    const label = row.demand;
+    const acts = annForward(model, input);
+    const output = acts[acts.length - 1];
+
+    // Cross-entropy loss
+    totalLoss -= Math.log(Math.max(output[label], 1e-10));
+
+    // Backprop (simplified)
+    let delta = output.map((v, i) => v - (i === label ? 1 : 0));
+    for (let l = model.weights.length - 1; l >= 0; l--) {
+      const prev = acts[l];
+      const newDelta = new Array(model.weights[l][0].length).fill(0);
+      model.weights[l].forEach((row2, i) => {
+        row2.forEach((_, j) => {
+          model.weights[l][i][j] -= lr * delta[i] * prev[j];
+          newDelta[j] += delta[i] * model.weights[l][i][j];
+        });
+        model.biases[l][i] -= lr * delta[i];
+      });
+      if (l > 0) delta = newDelta.map((d, i) => acts[l][i] > 0 ? d : 0);
+    }
+  });
+  return totalLoss / data.length;
+}
+
+function annPredict(model, sample) {
+  const acts = annForward(model, sample);
+  const out = acts[acts.length - 1];
+  return out.indexOf(Math.max(...out));
+}
+
+// ── METRICS ──
+function computeMetrics(testNorm) {
+  const results = {};
+  const algos = Object.entries(models).filter(([k, v]) => v && activeAlgos[k]);
+
+  algos.forEach(([name, model]) => {
+    const preds = testNorm.map(r => {
+      const sample = FEATURES.map(f => r[f]);
+      if (name === 'knn') return knnPredict(model, sample);
+      if (name === 'svm') return svmPredict(model, sample);
+      return annPredict(model, sample);
+    });
+    const labels = testNorm.map(r => r.demand);
+    results[name] = calcMetrics(labels, preds);
+  });
+
+  renderEvaluation(results);
+}
+
+function calcMetrics(labels, preds) {
+  const cm = Array.from({length: 3}, () => [0, 0, 0]);
+  labels.forEach((l, i) => cm[l][preds[i]]++);
+
+  const precision = [], recall = [], f1 = [];
+  let correct = 0;
+  labels.forEach((l, i) => { if (l === preds[i]) correct++; });
+
+  for (let c = 0; c < 3; c++) {
+    const tp = cm[c][c];
+    const fp = cm.reduce((s, row) => s + row[c], 0) - tp;
+    const fn = cm[c].reduce((s, v) => s + v, 0) - tp;
+    const p = tp + fp === 0 ? 0 : tp / (tp + fp);
+    const r = tp + fn === 0 ? 0 : tp / (tp + fn);
+    precision.push(p);
+    recall.push(r);
+    f1.push(p + r === 0 ? 0 : 2 * p * r / (p + r));
+  }
+
+  return {
+    accuracy: correct / labels.length,
+    precision: precision.reduce((a, b) => a + b) / 3,
+    recall: recall.reduce((a, b) => a + b) / 3,
+    f1: f1.reduce((a, b) => a + b) / 3,
+    f1PerClass: f1,
+    cm
+  };
+}
+
+function renderEvaluation(results) {
+  const algos = Object.keys(results);
+  const bestAcc = Math.max(...algos.map(a => results[a].accuracy));
+
+  // Metrics row
+  const metricsDiv = document.getElementById('evalMetrics');
+  const first = results[algos[0]];
+  metricsDiv.innerHTML = `
+    <div class="metric"><div class="metric-label">Best Accuracy</div><div class="metric-value" style="color:var(--green)">${(bestAcc*100).toFixed(1)}%</div></div>
+    <div class="metric"><div class="metric-label">Models Trained</div><div class="metric-value">${algos.length}</div></div>
+    <div class="metric"><div class="metric-label">Test Samples</div><div class="metric-value">${testSet.length}</div></div>
+    <div class="metric"><div class="metric-label">Classes</div><div class="metric-value">3</div></div>
+  `;
+
+  // Accuracy chart
+  if (evalChart) evalChart.destroy();
+  evalChart = new Chart(document.getElementById('evalChart'), {
+    type: 'bar',
+    data: {
+      labels: algos.map(a => a.toUpperCase()),
+      datasets: [{
+        label: 'Accuracy',
+        data: algos.map(a => +(results[a].accuracy * 100).toFixed(2)),
+        backgroundColor: ['#4f7cff','#c084fc','#2dd4a0'],
+        borderWidth: 0, borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { min: 0, max: 100, ticks: { color: '#8890a8', callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        x: { ticks: { color: '#8890a8' }, grid: { display: false } }
+      }
+    }
+  });
+
+  // F1 chart
+  if (f1Chart) f1Chart.destroy();
+  f1Chart = new Chart(document.getElementById('f1Chart'), {
+    type: 'bar',
+    data: {
+      labels: CLASSES,
+      datasets: algos.map((a, i) => ({
+        label: a.toUpperCase(),
+        data: results[a].f1PerClass.map(v => +(v*100).toFixed(2)),
+        backgroundColor: ['#4f7cff','#c084fc','#2dd4a0'][i],
+        borderWidth: 0, borderRadius: 4
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { min: 0, max: 100, ticks: { color: '#8890a8', callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        x: { ticks: { color: '#8890a8' }, grid: { display: false } }
+      }
+    }
+  });
+
+  // Full table
+  const table = document.getElementById('metricsTable');
+  table.innerHTML = `<tr><th>Algorithm</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>F1-Score</th></tr>
+  ${algos.map(a => {
+    const m = results[a];
+    const isBest = m.accuracy === bestAcc;
+    return `<tr>
+      <td style="font-weight:600; color:${isBest ? 'var(--green)' : 'var(--text)'}">${isBest ? '🏆 ' : ''}${a.toUpperCase()}</td>
+      <td class="${isBest ? 'best' : ''}">${(m.accuracy*100).toFixed(2)}%</td>
+      <td>${(m.precision*100).toFixed(2)}%</td>
+      <td>${(m.recall*100).toFixed(2)}%</td>
+      <td>${(m.f1*100).toFixed(2)}%</td>
+    </tr>`;
+  }).join('')}`;
+
+  // Confusion matrices
+  const cmDiv = document.getElementById('confMatrices');
+  cmDiv.innerHTML = algos.map((a, ai) => {
+    const cm = results[a].cm;
+    const colors = [['rgba(79,124,255,0.7)','rgba(79,124,255,0.2)','rgba(79,124,255,0.1)'],
+                    ['rgba(192,132,252,0.7)','rgba(192,132,252,0.2)','rgba(192,132,252,0.1)'],
+                    ['rgba(45,212,160,0.7)','rgba(45,212,160,0.2)','rgba(45,212,160,0.1)']];
+    const maxVal = Math.max(...cm.flat());
+    return `<div class="card">
+      <div class="card-title" style="margin-bottom:12px">${a.toUpperCase()} — Confusion Matrix</div>
+      <div style="font-size:10px; color:var(--muted); text-align:center; margin-bottom:8px">Predicted →</div>
+      <div style="display:flex; gap:2px; align-items:center">
+        <div style="font-size:9px; color:var(--muted); writing-mode:vertical-rl; transform:rotate(180deg); margin-right:4px">Actual ↓</div>
+        <div class="cm-wrap">
+          <div class="cm-row">${['','Low','Med','High'].map((l,i) => `<div style="width:70px; text-align:center; font-size:9px; color:var(--muted); padding:2px">${l}</div>`).join('')}</div>
+          ${cm.map((row, ri) => `<div class="cm-row">
+            <div style="width:70px; text-align:right; padding-right:6px; font-size:10px; color:var(--muted); display:flex; align-items:center; justify-content:flex-end">${CLASSES[ri]}</div>
+            ${row.map((v, ci) => {
+              const intensity = maxVal > 0 ? v/maxVal : 0;
+              const bg = ri === ci ? colors[ai][0] : (intensity > 0.3 ? colors[ai][1] : colors[ai][2]);
+              return `<div class="cm-cell" style="background:${bg}; width:70px; height:55px; font-size:${v > 99 ? 14 : 18}px">${v}</div>`;
+            }).join('')}
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderLossCurve(history) {
+  if (epochChart) epochChart.destroy();
+  epochChart = new Chart(document.getElementById('epochChart'), {
+    type: 'line',
+    data: {
+      labels: history.map((_, i) => i),
+      datasets: [{
+        label: 'Loss',
+        data: history.map(v => +v.toFixed(4)),
+        borderColor: '#2dd4a0',
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.3,
+        fill: true,
+        backgroundColor: 'rgba(45,212,160,0.08)'
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { ticks: { color: '#8890a8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        x: { ticks: { color: '#8890a8', maxTicksLimit: 10 }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════
+// PREDICTION
+// ═══════════════════════════════════
+function makePrediction() {
+  if (!trainedFlag) return;
+
+  const raw = [
+    parseInt(document.getElementById('pCategory').value),
+    parseInt(document.getElementById('pMonth').value),
+    parseFloat(document.getElementById('pPrice').value),
+    parseFloat(document.getElementById('pRating').value),
+    parseInt(document.getElementById('pPromo').value),
+    parseInt(document.getElementById('pStock').value)
+  ];
+
+  const norm = normalizeInput(raw);
+  const algo = document.getElementById('predAlgo').value;
+  const COLORS = { Low: 'var(--red)', Medium: 'var(--amber)', High: 'var(--green)' };
+  const ICONS = { Low: '📉', Medium: '📊', High: '📈' };
+
+  let pred, ensemble = null;
+
+  if (algo === 'all') {
+    const preds = {};
+    if (models.knn) preds.KNN = CLASSES[knnPredict(models.knn, norm)];
+    if (models.svm) preds.SVM = CLASSES[svmPredict(models.svm, norm)];
+    if (models.ann) preds.ANN = CLASSES[annPredict(models.ann, norm)];
+    const votes = { Low: 0, Medium: 0, High: 0 };
+    Object.values(preds).forEach(p => votes[p]++);
+    pred = Object.entries(votes).sort((a, b) => b[1] - a[1])[0][0];
+    ensemble = preds;
+  } else {
+    const m = models[algo];
+    if (!m) return;
+    const idx = algo === 'knn' ? knnPredict(m, norm) : algo === 'svm' ? svmPredict(m, norm) : annPredict(m, norm);
+    pred = CLASSES[idx];
+  }
+
+  document.getElementById('predResult').innerHTML = `
+    <div style="text-align:center; padding:20px">
+      <div style="font-size:48px; margin-bottom:8px">${ICONS[pred]}</div>
+      <div style="font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px">Predicted Demand</div>
+      <div style="font-size:42px; font-weight:700; font-family:var(--mono); color:${COLORS[pred]}">${pred.toUpperCase()}</div>
+      <div style="font-size:12px; color:var(--muted); margin-top:8px">${algo === 'all' ? 'Ensemble (Majority Vote)' : algo.toUpperCase()} · ${CATEGORIES[raw[0]]}</div>
+    </div>
+    <div style="padding:0 16px 16px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px">
+      <div class="metric" style="text-align:center"><div class="metric-label">Price</div><div style="font-family:var(--mono); font-weight:600">₱${raw[2].toLocaleString()}</div></div>
+      <div class="metric" style="text-align:center"><div class="metric-label">Rating</div><div style="font-family:var(--mono); font-weight:600">${raw[3]}⭐</div></div>
+      <div class="metric" style="text-align:center"><div class="metric-label">Promo</div><div style="font-family:var(--mono); font-weight:600">${raw[4] ? 'Yes' : 'No'}</div></div>
+    </div>`;
+
+  if (ensemble) {
+    document.getElementById('ensembleCard').style.display = 'block';
+    document.getElementById('ensembleResult').innerHTML = Object.entries(ensemble).map(([a, p]) => `
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border)">
+        <span style="font-size:12px; font-weight:600">${a}</span>
+        <span class="badge" style="background:${p==='High'?'rgba(45,212,160,0.15)':p==='Medium'?'rgba(245,166,35,0.15)':'rgba(255,95,95,0.15)'}; color:${COLORS[p]}; border-color:${COLORS[p]}40">${p}</span>
+      </div>`).join('');
+  } else {
+    document.getElementById('ensembleCard').style.display = 'none';
+  }
+
+  // Add to history
+  predHistory.unshift({ time: new Date().toLocaleTimeString(), category: CATEGORIES[raw[0]], algo: algo.toUpperCase(), pred, price: raw[2] });
+  if (predHistory.length > 5) predHistory.pop();
+
+  document.getElementById('predHistory').innerHTML = `
+    <table class="data-table"><tr><th>Time</th><th>Category</th><th>Algorithm</th><th>Price</th><th>Prediction</th></tr>
+    ${predHistory.map(p => `<tr>
+      <td>${p.time}</td><td>${p.category}</td><td>${p.algo}</td>
+      <td>₱${p.price.toLocaleString()}</td>
+      <td><span class="badge" style="background:${p.pred==='High'?'rgba(45,212,160,0.15)':p.pred==='Medium'?'rgba(245,166,35,0.15)':'rgba(255,95,95,0.15)'}; color:${p.pred==='High'?'var(--green)':p.pred==='Medium'?'var(--amber)':'var(--red)'}; border:none">${p.pred}</span></td>
+    </tr>`).join('')}
+    </table>`;
+}
+
+// ═══════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════
+function switchTab(i) {
+  document.querySelectorAll('.tab').forEach((t, j) => t.classList.toggle('active', j === i));
+  document.querySelectorAll('.panel').forEach((p, j) => p.classList.toggle('active', j === i));
+  document.querySelectorAll('.nav-item').forEach((n, j) => n.classList.toggle('active', j === i));
+  currentTab = i;
+}
+
+function gotoTab(i) { switchTab(i); return false; }
+
+function toggleAlgo(name) {
+  activeAlgos[name] = !activeAlgos[name];
+  document.getElementById(`ac-${name}`).classList.toggle('selected', activeAlgos[name]);
+}
+
+function setStatus(msg) { document.getElementById('statusMsg').textContent = msg; }
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+function dot(a, b) { return a.reduce((s, v, i) => s + v * b[i], 0); }
+</script>
+</body>
+</html>

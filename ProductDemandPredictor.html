@@ -371,7 +371,6 @@
               </div>
 
               <div class="upload-zone" onclick="document.getElementById('csvInput').click()">
-                <div class="upload-icon">📁</div>
                 <div class="upload-text">Click to upload CSV file</div>
                 <div class="upload-sub">Supports .csv files with product demand data</div>
               </div>
@@ -384,7 +383,7 @@
               </div>
 
               <button class="btn btn-primary" style="width:100%; justify-content:center" onclick="loadSampleData()">
-                ⚡ Load Sample Dataset (500 records)
+                Load Sample Dataset (500 records)
               </button>
             </div>
 
@@ -612,7 +611,7 @@
             <div class="section-divider"></div>
 
             <button class="btn btn-primary" id="btnTrain" style="width:100%; justify-content:center" onclick="trainModels()" disabled>
-              🚀 Train All Models
+               Train All Models
             </button>
           </div>
 
@@ -635,7 +634,6 @@
       <!-- ═══════════════════════════════════ PANEL 3: EVALUATION ═══════════════════════════════════ -->
       <div class="panel" id="panel-3">
         <div id="evalEmpty" class="card" style="text-align:center; padding:60px">
-          <div style="font-size:48px; margin-bottom:16px">📊</div>
           <div style="font-size:15px; font-weight:600; margin-bottom:8px">No Models Trained Yet</div>
           <div style="color:var(--muted); font-size:13px">Complete training first to see evaluation metrics</div>
         </div>
@@ -670,7 +668,6 @@
       <!-- ═══════════════════════════════════ PANEL 4: PREDICTION ═══════════════════════════════════ -->
       <div class="panel" id="panel-4">
         <div id="predEmpty" class="card" style="text-align:center; padding:60px">
-          <div style="font-size:48px; margin-bottom:16px">🎯</div>
           <div style="font-size:15px; font-weight:600; margin-bottom:8px">Models Not Ready</div>
           <div style="color:var(--muted); font-size:13px">Train the models first to make predictions</div>
         </div>
